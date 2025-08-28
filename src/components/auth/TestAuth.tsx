@@ -90,7 +90,12 @@ export default function TestAuth() {
   const testUserProfile = async () => {
     setLoading(true);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        setTestResult(`❌ Error auth: ${authError.message}`);
+        return;
+      }
+      
       if (!authUser) {
         setTestResult('❌ No hay usuario autenticado');
         return;
@@ -108,6 +113,31 @@ export default function TestAuth() {
         setTestResult(`✅ Perfil encontrado: ${data.full_name} (${data.role})`);
       } else {
         setTestResult('❌ Perfil no encontrado en tabla users');
+      }
+    } catch (err) {
+      setTestResult(`❌ Error: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createAdminUser = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: 'admin@triexpert.com',
+        password: 'admin123456',
+        options: {
+          data: {
+            full_name: 'Administrator'
+          }
+        }
+      });
+      
+      if (error) {
+        setTestResult(`❌ Error creando admin: ${error.message}`);
+      } else {
+        setTestResult(`✅ Admin creado: admin@triexpert.com / admin123456`);
       }
     } catch (err) {
       setTestResult(`❌ Error: ${err}`);
@@ -155,6 +185,13 @@ export default function TestAuth() {
               className="w-full text-xs bg-orange-500 text-white px-2 py-1 rounded"
             >
               Crear Usuario Test
+            </button>
+            <button
+              onClick={createAdminUser}
+              disabled={loading}
+              className="w-full text-xs bg-red-500 text-white px-2 py-1 rounded"
+            >
+              Crear Admin
             </button>
             <button
               onClick={checkAuthConfig}
