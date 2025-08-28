@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -48,9 +49,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) throw error;
+      console.log('User profile fetched successfully:', data);
       setUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // Si hay error de política, intentar crear el perfil
+      if (error.message?.includes('policy')) {
+        console.log('Policy error detected, user might not have profile');
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -86,29 +93,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       console.log('Signup successful:', data);
 
-      if (data.user && data.session) {
-        console.log('User created, creating profile...');
-        // Create user profile
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([
-            {
-              id: data.user.id,
-              email: data.user.email,
-              full_name: fullName,
-              role: 'user',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          ]);
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-        } else {
-          console.log('Profile created successfully');
-        }
-      } else if (data.user && !data.session) {
-        console.log('User created but needs email confirmation');
+      // El trigger debería crear el perfil automáticamente
+      if (data.user) {
+        console.log('User created successfully, trigger should create profile');
       }
 
       return { error: null };
