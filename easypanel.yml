@@ -15,8 +15,22 @@ services:
       env:
         - name: NODE_ENV
           value: production
-        # Variables se configuran en EasyPanel UI
-        # No hardcodeadas aquí
+        - name: VITE_SUPABASE_URL
+          value: https://postgres.triexpertservice.com
+        - name: VITE_SUPABASE_ANON_KEY
+          value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+        - name: VITE_PROXMOX_HOST
+          value: https://your-proxmox-server:8006
+        - name: VITE_PROXMOX_USERNAME
+          value: root@pam
+        - name: VITE_PROXMOX_PASSWORD
+          value: your-proxmox-password
+        - name: VITE_N8N_WEBHOOK_URL
+          value: https://your-n8n-instance.com/webhook
+        - name: VITE_N8N_API_KEY
+          value: your-n8n-api-key
+        - name: VITE_STRIPE_PUBLISHABLE_KEY
+          value: pk_test_your-stripe-key
     ports:
       - protocol: http
         host: 80

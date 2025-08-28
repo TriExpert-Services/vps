@@ -17,18 +17,18 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    console.log('[Login] Attempting to sign in with:', email);
+    console.log('Attempting to sign in with:', email);
     const { error } = await signIn(email, password);
     
     if (error) {
-      console.error('[Login] Login error:', error);
+      console.error('Login error:', error);
       setError('Email o contraseña incorrectos');
-      setLoading(false);
     } else {
-      console.log('[Login] Login successful, navigation will be handled by auth state change');
-      // No navegar manualmente - dejar que el componente App maneje la navegación
-      // basado en el estado de autenticación
+      console.log('Login successful, navigating to dashboard');
+      navigate('/dashboard');
     }
+    
+    setLoading(false);
   };
 
   return (
