@@ -44,13 +44,23 @@ export default function Register() {
     
     if (error) {
       console.error('Registration error:', error);
-      setError(error.message || 'Error al crear la cuenta. Intenta nuevamente.');
+      
+      // Manejar errores específicos de email
+      if (error.message?.includes('confirmation email') || error.message?.includes('SMTP')) {
+        setError('Error de configuración de email. El administrador está resolviendo este problema. Mientras tanto, puedes intentar iniciar sesión si ya tienes cuenta.');
+      } else if (error.message?.includes('rate limit')) {
+        setError('Demasiados intentos. Espera unos minutos antes de intentar nuevamente.');
+      } else if (error.message?.includes('already registered')) {
+        setError('Este email ya está registrado. Intenta iniciar sesión.');
+      } else {
+        setError(error.message || 'Error al crear la cuenta. Intenta nuevamente.');
+      }
     } else {
       console.log('Registration successful');
-      // Pequeña pausa para permitir que se complete el proceso
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      // Si el registro fue exitoso pero hay problemas de email, mostrar mensaje informativo
+      setError('');
+      alert('✅ Cuenta creada exitosamente! Puedes iniciar sesión ahora.');
+      navigate('/login');
     }
     
     setLoading(false);

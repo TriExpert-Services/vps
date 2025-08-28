@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
+          emailRedirectTo: undefined, // Deshabilitar redirect para evitar problemas
           data: {
             full_name: fullName,
             fullName: fullName // Ambos por compatibilidad
@@ -93,8 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       console.log('Signup successful:', data);
 
-      // El trigger debería crear el perfil automáticamente
-      if (data.user) {
+      // Si el usuario se creó pero hay warning de email, aún es éxito
+      if (data.user && !data.user.email_confirmed_at) {
+        console.log('User created but email not confirmed - this is OK for now');
+      } else if (data.user) {
         console.log('User created successfully, trigger should create profile');
       }
 

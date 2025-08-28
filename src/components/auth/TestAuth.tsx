@@ -15,6 +15,7 @@ export default function TestAuth() {
         email: 'test@triexpert.com',
         password: 'test123456',
         options: {
+          emailRedirectTo: undefined, // No redirect por problemas SMTP
           data: {
             full_name: 'Test User'
           }
@@ -22,9 +23,13 @@ export default function TestAuth() {
       });
       
       if (error) {
-        setTestResult(`❌ Error creando usuario: ${error.message}`);
+        if (error.message?.includes('confirmation email') || error.message?.includes('SMTP')) {
+          setTestResult(`⚠️ Usuario creado pero error de email: ${error.message}\n✅ Puedes iniciar sesión con test@triexpert.com / test123456`);
+        } else {
+          setTestResult(`❌ Error creando usuario: ${error.message}`);
+        }
       } else {
-        setTestResult(`✅ Usuario de prueba creado: test@triexpert.com / test123456`);
+        setTestResult(`✅ Usuario de prueba creado: test@triexpert.com / test123456\n${data.user?.email_confirmed_at ? '📧 Email confirmado' : '⚠️ Email pendiente (OK para desarrollo)'}`);
       }
     } catch (err) {
       setTestResult(`❌ Error: ${err}`);
@@ -142,6 +147,7 @@ export default function TestAuth() {
         email: 'admin@triexpert.com',
         password: 'admin123456',
         options: {
+          emailRedirectTo: undefined, // No redirect por problemas SMTP
           data: {
             full_name: 'Administrator'
           }
@@ -149,9 +155,13 @@ export default function TestAuth() {
       });
       
       if (error) {
-        setTestResult(`❌ Error creando admin: ${error.message}`);
+        if (error.message?.includes('confirmation email') || error.message?.includes('SMTP')) {
+          setTestResult(`⚠️ Admin creado pero error de email: ${error.message}\n✅ Puedes iniciar sesión con admin@triexpert.com / admin123456`);
+        } else {
+          setTestResult(`❌ Error creando admin: ${error.message}`);
+        }
       } else {
-        setTestResult(`✅ Admin creado: admin@triexpert.com / admin123456`);
+        setTestResult(`✅ Admin creado exitosamente: admin@triexpert.com / admin123456\n${data.user?.email_confirmed_at ? '📧 Email confirmado' : '⚠️ Email pendiente (OK para desarrollo)'}`);
       }
     } catch (err) {
       setTestResult(`❌ Error: ${err}`);
