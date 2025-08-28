@@ -38,22 +38,18 @@ export default function Register() {
     }
 
     setLoading(true);
-    console.log('Attempting to register:', formData.email, formData.fullName);
+    console.log('[Register] Attempting to register:', formData.email, formData.fullName);
     
     const { error } = await signUp(formData.email, formData.password, formData.fullName);
     
     if (error) {
-      console.error('Registration error:', error);
+      console.error('[Register] Registration error:', error);
       setError(error.message || 'Error al crear la cuenta. Intenta nuevamente.');
+      setLoading(false);
     } else {
-      console.log('Registration successful');
-      // Pequeña pausa para permitir que se complete el proceso
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      console.log('[Register] Registration successful');
+      // La navegación se manejará automáticamente por el cambio de estado de auth
     }
-    
-    setLoading(false);
   };
 
   return (

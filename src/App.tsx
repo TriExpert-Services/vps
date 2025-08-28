@@ -21,26 +21,46 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   const { user, loading } = useAuth();
   
   if (loading) {
+    console.log('[ProtectedRoute] Loading auth state...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
       </div>
     );
   }
   
   if (!user) {
+    console.log('[ProtectedRoute] No user found, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   if (adminOnly && user.role !== 'admin') {
+    console.log('[ProtectedRoute] User is not admin, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
+  
+  console.log('[ProtectedRoute] Access granted for user:', user.email, 'role:', user.role);
   
   return <>{children}</>;
 }
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  // Mostrar loading mientras se inicializa la autenticación
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Inicializando aplicación...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -48,6 +68,7 @@ function AppContent() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          
           <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
           <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
           
@@ -94,7 +115,7 @@ function AppContent() {
           } />
         </Routes>
       </main>
-      {/* Debug component - remove in production */}
+      {/* Debug component - solo en desarrollo */}
       <TestAuth />
       <Footer />
     </div>

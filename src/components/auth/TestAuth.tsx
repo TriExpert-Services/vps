@@ -138,6 +138,21 @@ export default function TestAuth() {
   const checkUserRole = async () => {
     setLoading(true);
     try {
+      // Primero verificar conexión básica
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        setTestResult(`❌ Error auth: ${authError.message}`);
+        return;
+      }
+      
+      if (!authUser) {
+        setTestResult('❌ No hay usuario autenticado');
+        return;
+      }
+
+      setTestResult(`✅ Usuario autenticado: ${authUser.email}`);
+
+      // Intentar obtener perfil
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError) {
         setTestResult(`❌ Error auth: ${authError.message}`);
@@ -150,18 +165,22 @@ export default function TestAuth() {
       }
 
       // Obtener perfil del usuario
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
 
-      if (error) {
-        setTestResult(`❌ Error obteniendo perfil: ${error.message}`);
-      } else if (data) {
-        setTestResult(`✅ Usuario: ${data.email} | Rol: ${data.role} | Nombre: ${data.full_name}`);
-      } else {
-        setTestResult('❌ Perfil no encontrado');
+        if (error) {
+          setTestResult(`❌ Error obteniendo perfil: ${error.message}\nEmail del usuario: ${authUser.email}\nID: ${authUser.id}`);
+        } else if (data) {
+          setTestResult(`✅ Usuario: ${data.email} | Rol: ${data.role} | Nombre: ${data.full_name}`);
+        } else {
+          setTestResult('❌ Perfil no encontrado');
+        }
+      } catch (profileError) {
+        setTestResult(`❌ Error de perfil: ${profileError}\nUsuario existe en auth: ${authUser.email}`);
       }
     } catch (err) {
       setTestResult(`❌ Error: ${err}`);
@@ -195,6 +214,25 @@ export default function TestAuth() {
     }
   };
 
+  const forceRefreshProfile = async () => {
+    setLoading(true);
+    try {
+      const { refreshProfile } = useAuth();
+      await refreshProfile();
+      setTestResult('✅ Perfil actualizado, revisa la esquina inferior');
+    } catch (error) {
+      setTestResult(`❌ Error actualizando perfil: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOutTest = async () => {
+    const { signOut } = useAuth();
+    await signOut();
+    setTestResult('✅ Sesión cerrada');
+  };
+
   return (
     <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border max-w-sm z-50">
       <h3 className="text-sm font-semibold mb-2">🔧 Debug Auth</h3>
@@ -216,9 +254,23 @@ export default function TestAuth() {
         <button
           onClick={testUserProfile}
           disabled={loading}
-          className="w-full text-xs bg-purple-500 text-white px-2 py-1 rounded"
+          className="w-full text-xs bg-purple-500 text-white px-2 py-1 rounded mb-1"
         >
-          Test User Profile
+          Check Role + Profile
+        </button>
+        <button
+          onClick={forceRefreshProfile}
+          disabled={loading}
+          className="w-full text-xs bg-indigo-500 text-white px-2 py-1 rounded mb-1"
+        >
+          Refresh Profile
+        </button>
+        <button
+          onClick={signOutTest}
+          disabled={loading}
+          className="w-full text-xs bg-red-500 text-white px-2 py-1 rounded"
+        >
+          Sign Out
         </button>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
@@ -259,7 +311,7 @@ export default function TestAuth() {
       )}
       {user && (
         <div className="mt-2 text-xs text-gray-600">
-          Current: {user.email} ({user.role})
+          <strong>Current:</strong> {user.email} ({user.role})
         </div>
       )}
     </div>
