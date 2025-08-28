@@ -20,8 +20,7 @@ git push origin main
 #### 2. Configurar en EasyPanel
 1. Crear nueva aplicación en EasyPanel
 2. Conectar con tu repositorio GitHub
-3. Usar el archivo `easypanel.yml` como configuración
-4. Configurar las variables de entorno:
+3. Configurar las variables de entorno en EasyPanel UI:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `VITE_PROXMOX_HOST`
@@ -30,6 +29,7 @@ git push origin main
    - `VITE_N8N_WEBHOOK_URL`
    - `VITE_N8N_API_KEY`
    - `VITE_STRIPE_PUBLISHABLE_KEY`
+4. Hacer deploy/rebuild de la aplicación
 
 #### 3. Dominio personalizado
 - Configurar DNS para apuntar a EasyPanel

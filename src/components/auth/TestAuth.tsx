@@ -61,20 +61,75 @@ export default function TestAuth() {
       const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!url || !key) {
-        setTestResult(`❌ Variables de entorno faltantes:\nURL: ${url ? '✅' : '❌'}\nKEY: ${key ? '✅' : '❌'}`);
+        setTestResult(`❌ Variables de EasyPanel faltantes:
+
+URL: ${url ? '✅ Configurada' : '❌ NO CONFIGURADA EN EASYPANEL'}
+KEY: ${key ? '✅ Configurada' : '❌ NO CONFIGURADA EN EASYPANEL'}
+
+🔧 Para arreglar:
+1. Ve a EasyPanel → tu app → Settings
+2. Configura las Environment Variables:
+   - VITE_SUPABASE_URL
+   - VITE_SUPABASE_ANON_KEY
+3. Redeploy la aplicación`);
         return;
       }
       
-      setTestResult(`🔧 Probando conexión...\nURL: ${url.substring(0, 30)}...\nKEY: ${key.substring(0, 30)}...`);
+      // Verificar si la key parece válida (JWT format)
+      const keyLooksValid = key.startsWith('eyJ') && key.split('.').length === 3;
+      if (!keyLooksValid) {
+        setTestResult(`❌ VITE_SUPABASE_ANON_KEY parece inválida:
+
+Recibida: ${key.substring(0, 50)}...
+
+❌ No parece ser un JWT válido (debe empezar con 'eyJ')
+
+🔧 Para arreglar:
+1. Ve a Supabase Dashboard → Settings → API
+2. Copia la 'anon public' key COMPLETA  
+3. Pégala en EasyPanel sin espacios extra`);
+        return;
+      }
+      
+      setTestResult(`🔧 Probando conexión con EasyPanel vars...
+URL: ${url.substring(0, 30)}...
+KEY: ${key.substring(0, 20)}...${key.substring(key.length - 10)}
+
+⏳ Conectando...`);
       
       const { data, error } = await supabase.from('users').select('*').limit(1);
       if (error) {
-        setTestResult(`❌ Error de conexión: ${error.message}\n\nDetalles:\n- Code: ${error.code}\n- Hint: ${error.hint}\n- Details: ${error.details}`);
+        setTestResult(`❌ Error de conexión desde EasyPanel:
+
+Error: ${error.message}
+Código: ${error.code || 'N/A'}
+Hint: ${error.hint || 'N/A'}
+Details: ${error.details || 'N/A'}
+
+🔧 Posibles causas:
+1. ANON_KEY incorrecta en EasyPanel
+2. URL de Supabase incorrecta
+3. Políticas RLS muy restrictivas
+4. Supabase project pausado/inactivo`);
       } else {
-        setTestResult(`✅ Conexión a Supabase exitosa\nUsuarios encontrados: ${data?.length || 0}`);
+        setTestResult(`✅ Conexión exitosa desde EasyPanel!
+
+✅ Variables configuradas correctamente
+✅ Supabase responde OK  
+✅ Usuarios encontrados: ${data?.length || 0}
+
+🎉 Todo funciona perfecto!`);
       }
     } catch (err) {
-      setTestResult(`❌ Error de conexión: ${err}\n\nProbable causa:\n- ANON_KEY inválida\n- URL incorrecta\n- Políticas RLS bloqueando`);
+      setTestResult(`❌ Error crítico desde EasyPanel:
+
+${err}
+
+🔧 Checklist para EasyPanel:
+1. ✅ Variables configuradas en EasyPanel?
+2. ✅ App re-deployed después de cambiar vars?
+3. ✅ No hay espacios extra en las keys?
+4. ✅ Supabase project activo?`);
     } finally {
       setLoading(false);
     }
