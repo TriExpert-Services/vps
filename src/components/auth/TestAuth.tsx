@@ -72,11 +72,11 @@ export default function TestAuth() {
   const testAuth = async () => {
     setLoading(true);
     try {
-      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser();
       if (error) {
         setTestResult(`❌ Error de autenticación: ${error.message}`);
-      } else if (authUser) {
-        setTestResult(`✅ Usuario autenticado: ${authUser.email}`);
+      } else if (currentUser) {
+        setTestResult(`✅ Usuario autenticado: ${currentUser.email}`);
       } else {
         setTestResult('ℹ️ No hay usuario autenticado');
       }
@@ -104,13 +104,13 @@ export default function TestAuth() {
 
       setTestResult(`✅ Usuarios encontrados: ${allUsers?.length || 0}`);
 
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      if (authError) {
-        setTestResult(`❌ Error auth: ${authError.message}`);
+      const { data: { user: currentUser }, error: currentError } = await supabase.auth.getUser();
+      if (currentError) {
+        setTestResult(`❌ Error auth: ${currentError.message}`);
         return;
       }
       
-      if (!authUser) {
+      if (!currentUser) {
         setTestResult('❌ No hay usuario autenticado');
         return;
       }
@@ -118,7 +118,7 @@ export default function TestAuth() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', authUser.id)
+        .eq('id', currentUser.id)
         .single();
 
       if (error) {
@@ -139,48 +139,36 @@ export default function TestAuth() {
     setLoading(true);
     try {
       // Primero verificar conexión básica
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      if (authError) {
-        setTestResult(`❌ Error auth: ${authError.message}`);
+      const { data: { user: currentUser }, error: currentError } = await supabase.auth.getUser();
+      if (currentError) {
+        setTestResult(`❌ Error auth: ${currentError.message}`);
         return;
       }
       
-      if (!authUser) {
+      if (!currentUser) {
         setTestResult('❌ No hay usuario autenticado');
         return;
       }
 
-      setTestResult(`✅ Usuario autenticado: ${authUser.email}`);
+      setTestResult(`✅ Usuario autenticado: ${currentUser.email}`);
 
       // Intentar obtener perfil
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      if (authError) {
-        setTestResult(`❌ Error auth: ${authError.message}`);
-        return;
-      }
-      
-      if (!authUser) {
-        setTestResult('❌ No hay usuario autenticado');
-        return;
-      }
-
-      // Obtener perfil del usuario
       try {
         const { data, error } = await supabase
           .from('users')
           .select('*')
-          .eq('id', authUser.id)
+          .eq('id', currentUser.id)
           .single();
 
         if (error) {
-          setTestResult(`❌ Error obteniendo perfil: ${error.message}\nEmail del usuario: ${authUser.email}\nID: ${authUser.id}`);
+          setTestResult(`❌ Error obteniendo perfil: ${error.message}\nEmail del usuario: ${currentUser.email}\nID: ${currentUser.id}`);
         } else if (data) {
           setTestResult(`✅ Usuario: ${data.email} | Rol: ${data.role} | Nombre: ${data.full_name}`);
         } else {
           setTestResult('❌ Perfil no encontrado');
         }
       } catch (profileError) {
-        setTestResult(`❌ Error de perfil: ${profileError}\nUsuario existe en auth: ${authUser.email}`);
+        setTestResult(`❌ Error de perfil: ${profileError}\nUsuario existe en auth: ${currentUser.email}`);
       }
     } catch (err) {
       setTestResult(`❌ Error: ${err}`);
@@ -252,7 +240,7 @@ export default function TestAuth() {
           Test Auth
         </button>
         <button
-          onClick={testUserProfile}
+          onClick={checkUserRole}
           disabled={loading}
           className="w-full text-xs bg-purple-500 text-white px-2 py-1 rounded mb-1"
         >
