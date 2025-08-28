@@ -39,14 +39,18 @@ export default function Register() {
 
     setLoading(true);
     console.log('Attempting to register:', formData.email, formData.fullName);
+    
     const { error } = await signUp(formData.email, formData.password, formData.fullName);
     
     if (error) {
       console.error('Registration error:', error);
-      setError('Error al crear la cuenta. Intenta nuevamente.');
+      setError(error.message || 'Error al crear la cuenta. Intenta nuevamente.');
     } else {
       console.log('Registration successful');
-      navigate('/dashboard');
+      // Pequeña pausa para permitir que se complete el proceso
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     }
     
     setLoading(false);

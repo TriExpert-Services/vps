@@ -70,14 +70,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      console.log('Attempting signup:', { email, fullName });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+            fullName: fullName // Ambos por compatibilidad
+          }
+        }
       });
 
       if (error) throw error;
+      console.log('Signup successful:', data);
 
-      if (data.user) {
+      if (data.user && data.session) {
+        console.log('User created, creating profile...');
         // Create user profile
         const { error: profileError } = await supabase
           .from('users')
@@ -86,14 +96,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               id: data.user.id,
               email: data.user.email,
               full_name: fullName,
-              role: 'user'
+              role: 'user',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }
           ]);
 
         if (profileError) {
           console.error('Error creating user profile:', profileError);
-          // Don't throw error here, let user login even if profile creation fails
+        } else {
+          console.log('Profile created successfully');
         }
+      } else if (data.user && !data.session) {
+        console.log('User created but needs email confirmation');
       }
 
       return { error: null };

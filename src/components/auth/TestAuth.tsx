@@ -5,7 +5,53 @@ import { useAuth } from '../../hooks/useAuth';
 export default function TestAuth() {
   const [testResult, setTestResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { user } = useAuth();
+
+  const createTestUser = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: 'test@triexpert.com',
+        password: 'test123456',
+        options: {
+          data: {
+            full_name: 'Test User'
+          }
+        }
+      });
+      
+      if (error) {
+        setTestResult(`❌ Error creando usuario: ${error.message}`);
+      } else {
+        setTestResult(`✅ Usuario de prueba creado: test@triexpert.com / test123456`);
+      }
+    } catch (err) {
+      setTestResult(`❌ Error: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkAuthConfig = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('auth.config')
+        .select('*')
+        .limit(1);
+      
+      if (error) {
+        setTestResult(`ℹ️ No se puede acceder a config: ${error.message}`);
+      } else {
+        setTestResult(`✅ Config accesible: ${JSON.stringify(data)}`);
+      }
+    } catch (err) {
+      setTestResult(`❌ Error config: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const testConnection = async () => {
     setLoading(true);
@@ -71,7 +117,7 @@ export default function TestAuth() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border max-w-sm">
+    <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border max-w-sm z-50">
       <h3 className="text-sm font-semibold mb-2">🔧 Debug Auth</h3>
       <div className="space-y-2">
         <button
@@ -95,9 +141,33 @@ export default function TestAuth() {
         >
           Test User Profile
         </button>
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full text-xs bg-gray-500 text-white px-2 py-1 rounded"
+        >
+          {showAdvanced ? 'Ocultar' : 'Mostrar'} Avanzado
+        </button>
+        {showAdvanced && (
+          <>
+            <button
+              onClick={createTestUser}
+              disabled={loading}
+              className="w-full text-xs bg-orange-500 text-white px-2 py-1 rounded"
+            >
+              Crear Usuario Test
+            </button>
+            <button
+              onClick={checkAuthConfig}
+              disabled={loading}
+              className="w-full text-xs bg-pink-500 text-white px-2 py-1 rounded"
+            >
+              Check Auth Config
+            </button>
+          </>
+        )}
       </div>
       {testResult && (
-        <div className="mt-2 p-2 text-xs bg-gray-100 rounded">
+        <div className="mt-2 p-2 text-xs bg-gray-100 rounded max-h-32 overflow-y-auto">
           {testResult}
         </div>
       )}
