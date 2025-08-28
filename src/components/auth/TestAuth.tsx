@@ -56,9 +56,9 @@ export default function TestAuth() {
   const testConnection = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('users').select('count').limit(1);
+      const { data, error } = await supabase.from('users').select('*').limit(1);
       if (error) {
-        setTestResult(`Error de conexión: ${error.message}`);
+        setTestResult(`❌ Error de conexión: ${error.message}`);
       } else {
         setTestResult('✅ Conexión a Supabase exitosa');
       }
@@ -90,6 +90,20 @@ export default function TestAuth() {
   const testUserProfile = async () => {
     setLoading(true);
     try {
+      // Primero probar una consulta simple a la tabla users
+      const { data: allUsers, error: listError } = await supabase
+        .from('users')
+        .select('*')
+        .limit(5);
+
+      if (listError) {
+        setTestResult(`❌ Error listando usuarios: ${listError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      setTestResult(`✅ Usuarios encontrados: ${allUsers?.length || 0}`);
+
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError) {
         setTestResult(`❌ Error auth: ${authError.message}`);
@@ -155,7 +169,7 @@ export default function TestAuth() {
           disabled={loading}
           className="w-full text-xs bg-blue-500 text-white px-2 py-1 rounded"
         >
-          Test DB Connection
+          Test DB + Users Table
         </button>
         <button
           onClick={testAuth}
