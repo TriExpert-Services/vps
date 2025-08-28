@@ -9,6 +9,7 @@ services:
     build:
       type: dockerfile
       dockerfile: Dockerfile
+      context: .
     deploy:
       replicas: 1
       env:
