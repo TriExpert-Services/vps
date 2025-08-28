@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker:build": "docker build -t triexpert-services .",
+    "docker:run": "docker run -p 3000:80 triexpert-services",
+    "docker:compose": "docker-compose up --build",
+    "docker:prod": "docker-compose -f docker-compose.prod.yml up --build -d"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",

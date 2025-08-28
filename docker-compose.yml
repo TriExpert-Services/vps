@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  triexpert-app:
+    build: .
+    container_name: triexpert-services
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.triexpert.rule=Host(`triexpert.com`)"
+      - "traefik.http.routers.triexpert.tls=true"
+      - "traefik.http.routers.triexpert.tls.certresolver=letsencrypt"
+      - "triexpert.description=TriExpert Services VPS Platform"
