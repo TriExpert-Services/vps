@@ -88,7 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
-      }
     } finally {
       setLoading(false);
     }
