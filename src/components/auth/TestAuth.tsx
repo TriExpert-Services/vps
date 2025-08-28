@@ -56,14 +56,25 @@ export default function TestAuth() {
   const testConnection = async () => {
     setLoading(true);
     try {
+      // Primero verificar configuración
+      const url = import.meta.env.VITE_SUPABASE_URL;
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!url || !key) {
+        setTestResult(`❌ Variables de entorno faltantes:\nURL: ${url ? '✅' : '❌'}\nKEY: ${key ? '✅' : '❌'}`);
+        return;
+      }
+      
+      setTestResult(`🔧 Probando conexión...\nURL: ${url.substring(0, 30)}...\nKEY: ${key.substring(0, 30)}...`);
+      
       const { data, error } = await supabase.from('users').select('*').limit(1);
       if (error) {
-        setTestResult(`❌ Error de conexión: ${error.message}`);
+        setTestResult(`❌ Error de conexión: ${error.message}\n\nDetalles:\n- Code: ${error.code}\n- Hint: ${error.hint}\n- Details: ${error.details}`);
       } else {
-        setTestResult('✅ Conexión a Supabase exitosa');
+        setTestResult(`✅ Conexión a Supabase exitosa\nUsuarios encontrados: ${data?.length || 0}`);
       }
     } catch (err) {
-      setTestResult(`❌ Error: ${err}`);
+      setTestResult(`❌ Error de conexión: ${err}\n\nProbable causa:\n- ANON_KEY inválida\n- URL incorrecta\n- Políticas RLS bloqueando`);
     } finally {
       setLoading(false);
     }
@@ -228,9 +239,20 @@ export default function TestAuth() {
         <button
           onClick={testConnection}
           disabled={loading}
-          className="w-full text-xs bg-blue-500 text-white px-2 py-1 rounded"
+          className="w-full text-xs bg-blue-500 text-white px-2 py-1 rounded mb-1"
         >
-          Test DB + Users Table
+          🔗 Test Connection & Config
+        </button>
+        
+        <button
+          onClick={() => {
+            const url = import.meta.env.VITE_SUPABASE_URL;
+            const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            setTestResult(`📋 Environment Variables:\n\nVITE_SUPABASE_URL:\n${url || 'NOT SET'}\n\nVITE_SUPABASE_ANON_KEY:\n${key ? key.substring(0, 50) + '...' : 'NOT SET'}`);
+          }}
+          className="w-full text-xs bg-gray-500 text-white px-2 py-1 rounded mb-1"
+        >
+          📋 Show Environment
         </button>
         <button
           onClick={testAuth}
