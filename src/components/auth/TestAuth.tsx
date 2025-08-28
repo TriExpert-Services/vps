@@ -135,6 +135,41 @@ export default function TestAuth() {
     }
   };
 
+  const checkUserRole = async () => {
+    setLoading(true);
+    try {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        setTestResult(`❌ Error auth: ${authError.message}`);
+        return;
+      }
+      
+      if (!authUser) {
+        setTestResult('❌ No hay usuario autenticado');
+        return;
+      }
+
+      // Obtener perfil del usuario
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (error) {
+        setTestResult(`❌ Error obteniendo perfil: ${error.message}`);
+      } else if (data) {
+        setTestResult(`✅ Usuario: ${data.email} | Rol: ${data.role} | Nombre: ${data.full_name}`);
+      } else {
+        setTestResult('❌ Perfil no encontrado');
+      }
+    } catch (err) {
+      setTestResult(`❌ Error: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createAdminUser = async () => {
     setLoading(true);
     try {
