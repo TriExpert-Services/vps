@@ -38,6 +38,24 @@ export default function TestAuth() {
     }
   };
 
+  const debugAuthFlow = async () => {
+    setLoading(true);
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        setTestResult(`❌ Session error: ${error.message}`);
+      } else if (session) {
+        setTestResult(`✅ Active session: ${session.user.email}\n🔍 Checking profile fetch...`);
+      } else {
+        setTestResult(`ℹ️ No active session`);
+      }
+    } catch (err) {
+      setTestResult(`❌ Error: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const checkAuthConfig = async () => {
     setLoading(true);
     try {
@@ -194,6 +212,13 @@ export default function TestAuth() {
           className="w-full text-xs bg-purple-500 text-white px-2 py-1 rounded"
         >
           Test User Profile
+        </button>
+        <button
+          onClick={debugAuthFlow}
+          disabled={loading}
+          className="w-full text-xs bg-indigo-500 text-white px-2 py-1 rounded"
+        >
+          🔍 Debug Auth Flow
         </button>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}

@@ -17,10 +17,26 @@ import AdminVPS from './pages/admin/VPS';
 import AdminSettings from './pages/admin/Settings';
 import TestAuth from './components/auth/TestAuth';
 
+// Componente para redirección automática después de login
+function LoginRedirect() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  React.useEffect(() => {
+    if (user) {
+      console.log('🎯 User logged in, redirecting to dashboard:', user.email);
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+  
+  return <Login />;
+}
+
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
   
   if (loading) {
+    console.log('⏳ ProtectedRoute: Still loading...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -29,13 +45,16 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   }
   
   if (!user) {
+    console.log('🚪 ProtectedRoute: No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   if (adminOnly && user.role !== 'admin') {
+    console.log('🔒 ProtectedRoute: User not admin, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
   
+  console.log('✅ ProtectedRoute: Access granted for:', user.email, user.role);
   return <>{children}</>;
 }
 
@@ -48,7 +67,7 @@ function AppContent() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginRedirect />} />
           <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
           
           <Route path="/dashboard" element={

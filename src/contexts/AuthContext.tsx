@@ -18,18 +18,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Get initial session
+    console.log('🔄 AuthProvider: Checking initial session...');
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('📝 Initial session check:', session?.user?.email || 'No session');
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user.id, session.user);
       } else {
+        console.log('❌ No initial session found');
         setLoading(false);
       }
     });
 
     // Listen for auth changes
+    console.log('🎧 AuthProvider: Setting up auth state listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state change:', event, session?.user?.email || 'No user');
       if (session?.user) {
-        await fetchUserProfile(session.user.id);
+        await fetchUserProfile(session.user.id, session.user);
       } else {
         setUser(null);
         setLoading(false);
@@ -39,45 +44,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string, authUser?: any) => {
     try {
-      console.log('Fetching user profile for:', userId);
+      console.log('👤 Fetching user profile for:', userId, authUser?.email);
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
-      console.log('User profile fetched successfully:', data);
-      setUser(data);
+      if (error) {
+        console.error('❌ Error fetching user profile:', error);
+        
+        // Si el perfil no existe, crear uno automáticamente
+        if (error.code === 'PGRST116' && authUser) {
+          console.log('🔨 Profile not found, creating one...');
+          await createUserProfile(authUser);
+          return;
+        }
+        
+        // Para otros errores, seguir adelante sin perfil
+        console.warn('⚠️ Continuing without profile due to error:', error.message);
+        setUser({
+          id: userId,
+          email: authUser?.email || 'unknown@email.com',
+          full_name: authUser?.user_metadata?.full_name || authUser?.email || 'Unknown User',
+          role: 'user',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      } else {
+        console.log('✅ User profile fetched successfully:', data.email, data.role);
+        setUser(data);
+      }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      // Si hay error de política, intentar crear el perfil
-      if (error.message?.includes('policy')) {
-        console.log('Policy error detected, user might not have profile');
-        setUser(null);
+      console.error('❌ Unexpected error in fetchUserProfile:', error);
+      // En caso de error inesperado, crear usuario básico
+      setUser({
+        id: userId,
+        email: authUser?.email || 'unknown@email.com', 
+        full_name: authUser?.user_metadata?.full_name || authUser?.email || 'Unknown User',
+        role: 'user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const createUserProfile = async (authUser: any) => {
+    try {
+      console.log('🔨 Creating user profile for:', authUser.email);
+      const { data, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authUser.id,
+            email: authUser.email,
+            full_name: authUser.user_metadata?.full_name || authUser.email,
+            role: authUser.email?.includes('admin') ? 'admin' : 'user'
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      console.log('✅ User profile created:', data.email, data.role);
+      setUser(data);
+    } catch (error) {
+      console.error('❌ Error creating user profile:', error);
+      // Continuar con perfil básico
+      await fetchUserProfile(authUser.id, authUser);
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('🔐 Attempting sign in for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
+      if (error) {
+        console.error('❌ Sign in error:', error);
+      } else {
+        console.log('✅ Sign in successful for:', email);
+      }
+      
       return { error };
     } catch (error) {
+      console.error('❌ Unexpected sign in error:', error);
       return { error: error as Error };
     }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      console.log('Attempting signup:', { email, fullName });
+      console.log('📝 Attempting signup:', { email, fullName });
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -91,8 +157,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-      if (error) throw error;
-      console.log('Signup successful:', data);
+      if (error) {
+        console.error('❌ Signup error:', error);
+        throw error;
+      }
+      console.log('✅ Signup successful:', data);
 
       // Si el usuario se creó pero hay warning de email, aún es éxito
       if (data.user && !data.user.email_confirmed_at) {
@@ -109,8 +178,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    console.log('🚪 Signing out...');
     await supabase.auth.signOut();
     setUser(null);
+    console.log('✅ Signed out successfully');
   };
 
   return (

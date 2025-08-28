@@ -17,18 +17,18 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    console.log('Attempting to sign in with:', email);
+    console.log('🔐 Login: Attempting to sign in with:', email);
     const { error } = await signIn(email, password);
     
     if (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       setError('Email o contraseña incorrectos');
+      setLoading(false);
     } else {
-      console.log('Login successful, navigating to dashboard');
-      navigate('/dashboard');
+      console.log('✅ Login successful, waiting for auth context...');
+      // No navegar inmediatamente, dejar que AuthContext maneje el estado
+      // La navegación se hará automáticamente cuando user se establezca
     }
-    
-    setLoading(false);
   };
 
   return (
