@@ -47,6 +47,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (userId: string, authUser?: any) => {
     try {
       console.log('👤 Fetching user profile for:', userId, authUser?.email);
+      
+      // Verificar conexión con Supabase primero
+      const { data: testData, error: testError } = await supabase
+        .from('users')
+        .select('count')
+        .limit(1);
+      
+      if (testError) {
+        console.error('❌ Database connection failed:', testError);
+        throw new Error(`Database connection failed: ${testError.message}`);
+      }
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -54,41 +66,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        console.error('❌ Error fetching user profile:', error);
+        console.error('❌ Error fetching user profile:', error.code, error.message);
         
         // Si el perfil no existe, crear uno automáticamente
         if (error.code === 'PGRST116' && authUser) {
           console.log('🔨 Profile not found, creating one...');
-          await createUserProfile(authUser);
+          const created = await createUserProfile(authUser);
+          if (created) {
+            console.log('✅ Profile created successfully, retrying fetch...');
+            return fetchUserProfile(userId, authUser);
+          }
           return;
         }
         
         // Para otros errores, seguir adelante sin perfil
         console.warn('⚠️ Continuing without profile due to error:', error.message);
-        setUser({
+        const fallbackUser = {
           id: userId,
           email: authUser?.email || 'unknown@email.com',
           full_name: authUser?.user_metadata?.full_name || authUser?.email || 'Unknown User',
           role: 'user',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        });
+        };
+        console.log('👤 Using fallback user profile:', fallbackUser);
+        setUser(fallbackUser);
       } else {
         console.log('✅ User profile fetched successfully:', data.email, data.role);
         setUser(data);
       }
     } catch (error) {
       console.error('❌ Unexpected error in fetchUserProfile:', error);
-      // En caso de error inesperado, crear usuario básico
-      setUser({
+      // En caso de error inesperado, crear usuario básico y continuar
+      const emergencyUser = {
         id: userId,
         email: authUser?.email || 'unknown@email.com', 
         full_name: authUser?.user_metadata?.full_name || authUser?.email || 'Unknown User',
         role: 'user',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      });
+      };
+      console.log('🚨 Emergency user profile created:', emergencyUser);
+      setUser(emergencyUser);
     } finally {
+      console.log('✅ fetchUserProfile completed, setting loading to false');
       setLoading(false);
     }
   };
@@ -103,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: authUser.id,
             email: authUser.email,
             full_name: authUser.user_metadata?.full_name || authUser.email,
-            role: authUser.email?.includes('admin') ? 'admin' : 'user'
+            role: (authUser.email?.includes('admin') || authUser.email?.includes('support')) ? 'admin' : 'user'
           }
         ])
         .select()
@@ -112,10 +133,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       console.log('✅ User profile created:', data.email, data.role);
       setUser(data);
+      return true;
     } catch (error) {
       console.error('❌ Error creating user profile:', error);
-      // Continuar con perfil básico
-      await fetchUserProfile(authUser.id, authUser);
+      // No llamar fetchUserProfile recursivamente
+      return false;
     }
   };
 

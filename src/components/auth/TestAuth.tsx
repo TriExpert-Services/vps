@@ -188,6 +188,26 @@ export default function TestAuth() {
     }
   };
 
+  const forceLogin = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'support@triexpertservice.com',
+        password: 'test123456' // o la contraseña que hayas usado
+      });
+      
+      if (error) {
+        setTestResult(`❌ Force login error: ${error.message}`);
+      } else {
+        setTestResult(`✅ Force login successful for: ${data.user?.email}`);
+      }
+    } catch (err) {
+      setTestResult(`❌ Force login error: ${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border max-w-sm z-50">
       <h3 className="text-sm font-semibold mb-2">🔧 Debug Auth</h3>
@@ -228,6 +248,13 @@ export default function TestAuth() {
         </button>
         {showAdvanced && (
           <>
+            <button
+              onClick={forceLogin}
+              disabled={loading}
+              className="w-full text-xs bg-green-500 text-white px-2 py-1 rounded"
+            >
+              🔓 Force Login (support@)
+            </button>
             <button
               onClick={createTestUser}
               disabled={loading}
